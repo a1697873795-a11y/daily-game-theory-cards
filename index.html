@@ -98,6 +98,22 @@
     .note { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
     .done-state { display: none; margin-top: 14px; color: var(--teal); font-weight: 800; }
     .done-state.show { display: block; }
+    .study-control { margin: 0 0 26px; padding: 18px; background: #f7f2e9; border: 1px solid var(--line); border-radius: 8px; }
+    .study-control-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 14px; }
+    .study-control h3 { margin: 0 0 4px; font-size: 17px; }
+    .study-control p { margin: 0; color: var(--muted); font-size: 13px; }
+    .study-count { flex: 0 0 auto; text-align: right; color: var(--muted); font-size: 12px; }
+    .study-count strong { display: block; color: var(--teal); font-size: 25px; line-height: 1; }
+    .planner-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: end; }
+    .module-picker { display: grid; gap: 5px; color: var(--muted); font-size: 12px; font-weight: 800; }
+    .module-picker select { width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 6px; padding: 9px 12px; background: white; color: var(--ink); font: inherit; font-weight: 600; }
+    .queue { display: grid; gap: 7px; margin-top: 12px; }
+    .queue:empty { display: none; }
+    .queue-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 6px; background: white; font-size: 13px; }
+    .queue-item.done { color: var(--muted); background: #eef5f3; text-decoration: line-through; }
+    .queue-item button { padding: 5px 9px; font-size: 12px; color: var(--teal); background: var(--teal-soft); }
+    .module-notice { display: none; margin-top: 12px; padding: 10px 12px; border-radius: 6px; background: #fff6df; color: #765915; font-size: 13px; }
+    .module-notice.show { display: block; }
     @media (max-width: 780px) {
       .shell { padding: 20px 14px 46px; }
       header { display: block; }
@@ -105,6 +121,9 @@
       .layout { grid-template-columns: 1fr; }
       .side { position: static; }
       .visual { grid-template-columns: 1fr; }
+      .study-control-head { display: block; }
+      .study-count { margin-top: 12px; text-align: left; }
+      .planner-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -116,11 +135,25 @@
         <h1>每天一个知识点</h1>
         <p class="subtitle">不追求读完一本书，只把一个概念带进今天的生活里。</p>
       </div>
-      <div class="streak"><strong id="streak">0 天</strong><span>连续完成</span></div>
+      <div class="streak"><strong id="streak">0 个</strong><span>今天已完成</span></div>
     </header>
 
     <div class="layout">
       <main class="main">
+        <section class="study-control" aria-labelledby="studyControlTitle">
+          <div class="study-control-head">
+            <div><h3 id="studyControlTitle">今天学什么？</h3><p>保留每日推荐，也可以自己从目录里加入多个模块。</p></div>
+            <div class="study-count"><strong id="todayCount">0</strong><span>今天已完成</span></div>
+          </div>
+          <div class="planner-grid">
+            <label class="module-picker">选择模块
+              <select id="moduleSelect" aria-label="选择要加入今天清单的模块"></select>
+            </label>
+            <button class="secondary" id="addModuleBtn" type="button">加入今天</button>
+          </div>
+          <div class="queue" id="todayQueue" aria-live="polite"></div>
+          <div class="module-notice" id="moduleNotice" role="status"></div>
+        </section>
         <div class="dayline"><span>第 1 天 · 约 8 分钟</span><span class="tag">行为偏差</span></div>
         <h2>沉没成本</h2>
         <p class="lead">已经花出去、无法追回的成本，不应该继续决定你未来要不要坚持。</p>
@@ -206,8 +239,8 @@
 
       <aside class="side">
         <h3>学习进度</h3>
-        <div><strong>1 / 45</strong><span style="float:right;color:var(--muted);font-size:12px">第一周：看清自己的选择</span></div>
-        <div class="progress"><i></i></div>
+        <div><strong id="catalogCount">0 / 45</strong><span style="float:right;color:var(--muted);font-size:12px">第一周：看清自己的选择</span></div>
+        <div class="progress"><i id="progressBar"></i></div>
         <div class="syllabus">
           <div><span>沉没成本</span><span>今天</span></div>
           <div><span>囚徒困境</span><span>明天</span></div>
@@ -222,25 +255,101 @@
     </div>
   </div>
   <script>
+    const modules = [
+      '沉没成本', '囚徒困境', '搭便车', '重复博弈', '信息不对称', '战略威慑', '倒推思维', '纳什均衡', '零和博弈', '正和博弈', '负和博弈', '信任与合作', '鹰鸽博弈', '猎鹿博弈', '协调博弈', '公地悲剧', '最后通牒', '独裁者博弈', '讨价还价', '信号博弈', '逆向选择', '道德风险', '承诺装置', '先发优势', '后发优势', '以牙还牙', '可信承诺', '试错策略', '机会成本', '边际收益', '风险与收益', '选择架构', '锚定效应', '框架效应', '互惠原则', '压力测试', '预期管理', '规则与激励', '资源分配', '联盟与结盟', '信誉与声誉', '退出机制', '最小后悔', '反事实思考', '长期视角'
+    ];
+    const availableModules = new Set(['沉没成本']);
+    const moduleSelect = document.querySelector('#moduleSelect');
+    const addModuleBtn = document.querySelector('#addModuleBtn');
+    const todayQueue = document.querySelector('#todayQueue');
+    const todayCount = document.querySelector('#todayCount');
+    const moduleNotice = document.querySelector('#moduleNotice');
+    const catalogCount = document.querySelector('#catalogCount');
+    const progressBar = document.querySelector('#progressBar');
+    const now = new Date();
+    const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const queueKey = `study-queue-${dateKey}`;
+    const progressKey = `study-progress-${dateKey}`;
+    const queue = JSON.parse(localStorage.getItem(queueKey) || '["沉没成本"]');
+    const progress = JSON.parse(localStorage.getItem(progressKey) || '{}');
+    modules.forEach((name, index) => {
+      const option = document.createElement('option');
+      option.value = String(index + 1);
+      option.textContent = `第 ${index + 1} 个｜${name}${availableModules.has(name) ? '（已开放）' : '（目录）'}`;
+      moduleSelect.appendChild(option);
+    });
+    moduleSelect.value = '1';
+    function savePlanner() {
+      localStorage.setItem(queueKey, JSON.stringify(queue));
+      localStorage.setItem(progressKey, JSON.stringify(progress));
+    }
+    function renderQueue() {
+      todayQueue.innerHTML = '';
+      [...new Set(queue)].forEach(name => {
+        const item = document.createElement('div');
+        item.className = `queue-item${progress[name] ? ' done' : ''}`;
+        const label = document.createElement('span');
+        label.textContent = `${progress[name] ? '已完成 · ' : '待学习 · '}${name}`;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = availableModules.has(name) ? '查看' : '说明';
+        button.addEventListener('click', () => {
+          if (availableModules.has(name)) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            moduleNotice.classList.remove('show');
+          } else {
+            moduleNotice.textContent = `${name} 已加入今天的清单，但详细卡片还在整理中。你可以先继续学习已开放的“沉没成本”，之后清单会自动保留。`;
+            moduleNotice.classList.add('show');
+          }
+        });
+        item.append(label, button);
+        todayQueue.appendChild(item);
+      });
+      const completed = Object.values(progress).filter(Boolean).length;
+      todayCount.textContent = completed;
+      streak.textContent = `${completed} 个`;
+      catalogCount.textContent = `${completed} / 45`;
+      progressBar.style.width = `${Math.min(100, completed / 45 * 100)}%`;
+      savePlanner();
+    }
+    addModuleBtn.addEventListener('click', () => {
+      const name = modules[Number(moduleSelect.value) - 1];
+      if (!queue.includes(name)) queue.push(name);
+      if (!availableModules.has(name)) {
+        moduleNotice.textContent = `${name} 已加入今天的清单。这个模块的详细内容还在整理中，先留在清单里，不会丢失。`;
+        moduleNotice.classList.add('show');
+      } else {
+        moduleNotice.textContent = '沉没成本已加入今天的清单，你可以继续添加其他模块。';
+        moduleNotice.classList.add('show');
+      }
+      renderQueue();
+    });
+
     const answerBtn = document.querySelector('#answerBtn');
     const answer = document.querySelector('#answer');
     const doneBtn = document.querySelector('#doneBtn');
     const doneState = document.querySelector('#doneState');
     const streak = document.querySelector('#streak');
-    const done = localStorage.getItem('day1-done') === '1';
-    if (done) { doneState.classList.add('show'); streak.textContent = '1 天'; }
+    const done = localStorage.getItem('day1-done') === '1' || progress['沉没成本'] === true;
+    if (done) { progress['沉没成本'] = true; doneState.classList.add('show'); streak.textContent = '1 个'; }
     answerBtn.addEventListener('click', () => {
       answer.classList.toggle('open');
       answerBtn.textContent = answer.classList.contains('open') ? '收起答案' : '查看答案';
     });
     doneBtn.addEventListener('click', () => {
       localStorage.setItem('day1-done', '1');
+      progress['沉没成本'] = true;
       doneState.classList.add('show');
-      streak.textContent = '1 天';
+      streak.textContent = `${Object.values(progress).filter(Boolean).length} 个`;
+      renderQueue();
     });
     document.querySelector('#nextBtn').addEventListener('click', () => {
-      alert('下一张知识卡会从“囚徒困境”开始。先把今天这个问题带进真实生活。');
+      moduleSelect.value = '2';
+      moduleNotice.textContent = '囚徒困境已选中。点击“加入今天”即可把它加入你的学习清单。';
+      moduleNotice.classList.add('show');
+      moduleSelect.focus();
     });
+    renderQueue();
   </script>
 </body>
 </html>
