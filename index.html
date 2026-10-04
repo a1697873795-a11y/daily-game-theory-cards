@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>每天一个博弈知识点</title>
+  <style>
+    :root {
+      --ink: #17212b;
+      --muted: #6f7c84;
+      --paper: #f6f1e8;
+      --panel: #fffdf8;
+      --line: #ded7ca;
+      --orange: #e47745;
+      --orange-dark: #ae4826;
+      --teal: #227b78;
+      --teal-soft: #dcefeb;
+      --yellow: #f2c866;
+      --shadow: 0 16px 40px rgba(34, 39, 42, .10);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      line-height: 1.65;
+    }
+    .shell { max-width: 1160px; margin: 0 auto; padding: 28px 22px 64px; }
+    header { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 30px; }
+    .eyebrow { color: var(--orange-dark); font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { margin: 6px 0 4px; font-family: Georgia, "Songti SC", serif; font-size: clamp(30px, 5vw, 52px); line-height: 1.1; letter-spacing: 0; }
+    .subtitle { margin: 0; color: var(--muted); max-width: 650px; }
+    .streak { min-width: 160px; padding: 14px 16px; background: var(--ink); color: white; border-radius: 8px; box-shadow: var(--shadow); }
+    .streak strong { display: block; color: var(--yellow); font-size: 27px; line-height: 1.1; }
+    .streak span { font-size: 12px; opacity: .8; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 22px; align-items: start; }
+    .main, .side { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+    .main { padding: clamp(22px, 4vw, 42px); }
+    .dayline { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 20px; color: var(--muted); font-size: 13px; }
+    .tag { color: var(--teal); background: var(--teal-soft); padding: 4px 10px; border-radius: 999px; font-weight: 800; }
+    h2 { font-family: Georgia, "Songti SC", serif; font-size: clamp(28px, 4vw, 42px); line-height: 1.2; margin: 8px 0 12px; }
+    .lead { font-size: 18px; margin: 0 0 28px; max-width: 720px; }
+    .visual { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 24px 0 30px; }
+    .route { padding: 18px; border: 1px solid var(--line); border-radius: 8px; position: relative; min-height: 145px; }
+    .route.bad { background: #fff0e9; border-color: #f0b39a; }
+    .route.good { background: #e8f4f0; border-color: #a7d6ca; }
+    .route h3 { margin: 0 0 7px; font-size: 14px; }
+    .route p { margin: 0; font-size: 14px; }
+    .route .score { position: absolute; right: 16px; bottom: 12px; font-weight: 900; font-size: 22px; }
+    .route.bad .score { color: var(--orange-dark); }
+    .route.good .score { color: var(--teal); }
+    .section { border-top: 1px solid var(--line); padding-top: 24px; margin-top: 26px; }
+    .section h3 { margin: 0 0 10px; font-size: 17px; }
+    .section h4 { margin: 18px 0 6px; font-size: 15px; }
+    .story { border-left: 4px solid var(--orange); padding: 2px 0 2px 18px; }
+    .story p { margin: 0; }
+    .plain { background: #eef5f3; border: 1px solid #b9d9d1; border-radius: 8px; padding: 18px 20px; }
+    .plain p { margin: 0 0 10px; }
+    .plain p:last-child { margin-bottom: 0; }
+    .examples { display: grid; gap: 12px; }
+    .example { border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; background: #fff; }
+    .example strong { color: var(--orange-dark); }
+    .example p { margin: 6px 0 0; font-size: 14px; }
+    .example .wrong, .example .right, .example .trap { display: block; margin-top: 9px; padding: 8px 10px; border-radius: 6px; font-size: 13px; }
+    .example .wrong { background: #fff0e9; color: #8d3d24; }
+    .example .right { background: #e8f4f0; color: #17645e; }
+    .example .trap { background: #f5edd7; color: #765915; }
+    .fit { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .fit > div { padding: 16px; border-radius: 8px; border: 1px solid var(--line); }
+    .fit .yes { background: #e8f4f0; border-color: #a7d6ca; }
+    .fit .no { background: #fff0e9; border-color: #f0b39a; }
+    .fit ul, .checklist { margin: 8px 0 0; padding-left: 20px; }
+    .fit li, .checklist li { margin: 5px 0; font-size: 14px; }
+    .checklist { background: #f5edd7; border-radius: 8px; padding: 16px 22px 16px 38px; }
+    .mistake { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; margin: 10px 0; }
+    .mistake b { color: var(--orange-dark); }
+    .tiny { color: var(--muted); font-size: 13px; }
+    .prompt { background: #f5edd7; border-radius: 8px; padding: 18px 20px; }
+    .prompt strong { display: block; margin-bottom: 6px; }
+    .answer { display: none; margin-top: 12px; color: var(--orange-dark); font-weight: 800; }
+    .answer.open { display: block; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+    button { font: inherit; cursor: pointer; border: 0; border-radius: 6px; padding: 11px 16px; font-weight: 800; }
+    .primary { color: white; background: var(--teal); }
+    .primary:hover { background: #185f5d; }
+    .secondary { color: var(--ink); background: #ebe4d8; }
+    .secondary:hover { background: #ded4c4; }
+    .done { color: white; background: var(--orange); }
+    .done:hover { background: var(--orange-dark); }
+    .side { padding: 22px; position: sticky; top: 18px; }
+    .side h3 { margin: 0 0 16px; font-size: 16px; }
+    .progress { height: 7px; border-radius: 99px; background: #e8e1d6; overflow: hidden; margin: 10px 0 20px; }
+    .progress i { display: block; width: 2.2%; height: 100%; background: var(--orange); }
+    .syllabus { display: grid; gap: 8px; }
+    .syllabus div { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); }
+    .syllabus div:first-child { color: var(--ink); font-weight: 800; }
+    .note { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+    .done-state { display: none; margin-top: 14px; color: var(--teal); font-weight: 800; }
+    .done-state.show { display: block; }
+    @media (max-width: 780px) {
+      .shell { padding: 20px 14px 46px; }
+      header { display: block; }
+      .streak { margin-top: 18px; display: inline-block; }
+      .layout { grid-template-columns: 1fr; }
+      .side { position: static; }
+      .visual { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div>
+        <div class="eyebrow">Micro learning · Game theory</div>
+        <h1>每天一个知识点</h1>
+        <p class="subtitle">不追求读完一本书，只把一个概念带进今天的生活里。</p>
+      </div>
+      <div class="streak"><strong id="streak">0 天</strong><span>连续完成</span></div>
+    </header>
+
+    <div class="layout">
+      <main class="main">
+        <div class="dayline"><span>第 1 天 · 约 8 分钟</span><span class="tag">行为偏差</span></div>
+        <h2>沉没成本</h2>
+        <p class="lead">已经花出去、无法追回的成本，不应该继续决定你未来要不要坚持。</p>
+
+        <div class="visual" aria-label="沉没成本示意图">
+          <div class="route bad"><h3>被过去绑架</h3><p>“票都买了，再难看也要看完。”</p><span class="score">200 元 + 2 小时</span></div>
+          <div class="route good"><h3>只看未来</h3><p>“钱回不来了，我现在还有更好的选择吗？”</p><span class="score">损失止于今天</span></div>
+        </div>
+
+        <section class="section">
+          <h3>先用大白话讲清楚</h3>
+          <div class="plain">
+            <p><strong>沉没成本不是“已经花掉的钱”。</strong>更准确地说，它是已经发生、现在无论怎么做都收不回来的代价，包括钱、时间、精力、面子和感情。</p>
+            <p>真正影响今天选择的，应该是从今天开始还要付出什么，以及未来还能得到什么。</p>
+          </div>
+          <h4>为什么人很容易掉进去？</h4>
+          <div class="story">
+            <p>人会本能地想证明“我当初没有选错”，也不愿承认自己看走眼。于是我们把过去的损失，偷偷当成继续投入的理由。可继续投入并不能让过去的钱回来，它只可能让损失变得更大。</p>
+          </div>
+        </section>
+
+        <section class="section">
+          <h3>现实生活里的 7 个故事</h3>
+          <div class="examples">
+            <div class="example"><strong>1｜电影看到一半</strong><p>小周花 80 元买票，看了 25 分钟发现电影非常无聊。因为“票都买了”，他又熬了两个小时，第二天还因为晚睡影响工作。</p><span class="wrong"><b>错误做法：</b>把已经付出的 80 元，当成必须继续付出两个小时的理由。</span><span class="right"><b>正确做法：</b>承认票钱不可追回，比较“继续看完”和“现在离开”的未来收益。</span><span class="trap"><b>真正误区：</b>把离开理解为浪费；其实浪费已经发生，离开是在阻止损失继续扩大。</span></div>
+            <div class="example"><strong>2｜买了不合适的课程</strong><p>小林花 1,200 元买了转行课程，三节课后发现内容偏理论，和目标岗位要求不匹配。他每天打开课程，却只是在完成打卡。</p><span class="wrong"><b>错误做法：</b>为了“回本”硬学完，把 1,200 元扩大成 40 小时的额外损失。</span><span class="right"><b>正确做法：</b>提取已经学到的有效部分，停止无效章节，把剩余时间放到更有反馈的训练上。</span><span class="trap"><b>真正误区：</b>以为“不学完”就等于前面的钱白花了；经验和判断已经留下，不需要用更多时间证明它。</span></div>
+            <div class="example"><strong>3｜亏损的股票</strong><p>小陈以每股 50 元买入，跌到 32 元后一直不卖。他不是因为看好公司，而是觉得“卖出就等于承认亏损”。</p><span class="wrong"><b>错误做法：</b>盯着买入价等回本，却不重新评估公司基本面、行业变化和替代投资。</span><span class="right"><b>正确做法：</b>假设手里现在是现金，问自己：还愿不愿意以 32 元买入？如果不愿意，就应重新配置。</span><span class="trap"><b>真正误区：</b>把“回本”当成自然规律；市场并不知道你的成本价。</span></div>
+            <div class="example"><strong>4｜做了半年的项目</strong><p>团队开发了一个功能，半年后只有极少用户使用。负责人却说：“都做到这一步了，再加几个功能就会起来。”</p><span class="wrong"><b>错误做法：</b>用更多开发量掩盖需求验证失败，继续投入人力和预算。</span><span class="right"><b>正确做法：</b>回到用户数据，设置明确的继续条件和停止条件；达不到就缩小、转型或停止。</span><span class="trap"><b>真正误区：</b>把“团队很辛苦”当成“项目有价值”的证据。努力说明成本，不说明需求。</span></div>
+            <div class="example"><strong>5｜维持多年却持续消耗的关系</strong><p>一段朋友关系维持了十年，但每次见面都变成借钱、指责或情绪消耗。你因为“认识太久了”而不敢拉开距离。</p><span class="wrong"><b>错误做法：</b>用过去十年的相处，替未来继续受伤找理由。</span><span class="right"><b>正确做法：</b>保留尊重和必要的边界，根据现在的互动质量决定联系频率。</span><span class="trap"><b>真正误区：</b>停止一段关系不等于否定过去；过去是真的，关系不适合继续也可能是真的。</span></div>
+            <div class="example"><strong>6｜装修超预算</strong><p>装修进行到一半，预算已经超出 30%。家人觉得“都拆成这样了，只能继续”，于是不断增加预算，最后还背上贷款。</p><span class="wrong"><b>错误做法：</b>因为已经开工，就默认必须按原方案完成。</span><span class="right"><b>正确做法：</b>重新列出剩余工程、剩余预算和可取消项目，必要时降低标准或暂停。</span><span class="trap"><b>真正误区：</b>把“已经拆掉的墙”当成继续花钱的理由；真正要比较的是剩余方案的价值。</span></div>
+            <div class="example"><strong>7｜为了面子继续争论</strong><p>会议上你提出的判断被新数据推翻了，但你已经当众说得很肯定，于是开始寻找各种理由证明自己没错。</p><span class="wrong"><b>错误做法：</b>为了维护面子，继续消耗时间，甚至把讨论变成人身对抗。</span><span class="right"><b>正确做法：</b>承认新证据改变了判断，并把注意力转向“现在怎样做更好”。</span><span class="trap"><b>真正误区：</b>把修正观点理解成丢脸；能及时更新判断，反而是在降低未来成本。</span></div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h3>书里的故事，换成今天的语言</h3>
+          <div class="story">
+            <p>协和式飞机项目投入巨大，英法两国后来发现它成本太高、市场也不理想，却因为已经花了很多钱而继续推进。这就是“协和谬误”：把无法追回的过去投资，误当成继续投资的理由。</p>
+            <p><strong>现代版：</strong>一家公司发现某个 App 连续半年没有留存，却因为已经投入了开发团队和宣传预算，继续追加功能。真正理性的做法不是“把前面的钱赚回来”，而是比较继续投入和停止投入的未来结果。</p>
+          </div>
+        </section>
+
+        <section class="section">
+          <h3>什么时候适合用？什么时候不能乱用？</h3>
+          <div class="fit">
+            <div class="yes"><h4>适合用在</h4><ul><li>投资、项目、课程等可重新评估的选择</li><li>已经出现明确负面证据的事情</li><li>继续投入需要新的钱、时间或精力</li><li>你发现自己常说“都已经这样了”</li></ul></div>
+            <div class="no"><h4>不要机械使用</h4><ul><li>仍然有明确的未来收益，而且证据在变好</li><li>退出成本比继续完成更高</li><li>只是短期困难，还没有足够信息判断</li><li>把承诺、责任和信用都当成“沉没成本”丢掉</li></ul></div>
+          </div>
+          <p class="tiny">关键不是“凡是投入过的都要放弃”，而是把过去投入从计算表里拿掉，重新计算未来。</p>
+        </section>
+
+        <section class="section">
+          <h3>一个可以直接使用的判断表</h3>
+          <ol class="checklist">
+            <li>如果今天还没开始，我还会选择它吗？</li>
+            <li>从今天起，还要投入多少钱、多少时间、多少精力？</li>
+            <li>继续投入后，成功的证据是否比上个月更多？</li>
+            <li>有没有更好的替代方案？切换的真实成本是什么？</li>
+            <li>我是在追求未来收益，还是只想证明过去没错？</li>
+          </ol>
+        </section>
+
+        <section class="section">
+          <h3>最常见的 3 个误区</h3>
+          <div class="mistake"><b>误区 1</b><span>“止损就是失败。”<br />其实止损是停止扩大损失，失败的是继续投入却拒绝更新判断。</span></div>
+          <div class="mistake"><b>误区 2</b><span>“过去的努力都白费了。”<br />过去的投入可以转化为经验、数据和教训，但不必继续投入同一个项目。</span></div>
+          <div class="mistake"><b>误区 3</b><span>“只要坚持就会成功。”<br />坚持只有在方向和反馈都合理时才有价值；没有反馈的坚持，可能只是惯性。</span></div>
+        </section>
+
+        <section class="section">
+          <h3>今天只做一个动作</h3>
+          <div class="prompt"><strong>找一件你正在坚持、但可能已经不值得继续的事。</strong><span>写下“继续三个月”的预计成本和收益，再写下“今天停止”的成本和收益。不要写过去已经花掉的钱。</span></div>
+        </section>
+
+        <section class="section">
+          <h3>睡前回忆题</h3>
+          <div class="prompt"><strong>为什么“已经投入很多”不能成为继续投入的理由？</strong><button class="secondary" id="answerBtn" type="button">查看答案</button><div class="answer" id="answer">因为过去的投入已经无法追回。现在应比较的是继续投入的未来收益和未来成本。</div></div>
+        </section>
+
+        <div class="actions"><button class="done" id="doneBtn" type="button">完成今天</button><button class="primary" id="nextBtn" type="button">明天继续</button></div>
+        <div class="done-state" id="doneState">已记录。今天不再加量，留一点空间让它沉淀。</div>
+      </main>
+
+      <aside class="side">
+        <h3>学习进度</h3>
+        <div><strong>1 / 45</strong><span style="float:right;color:var(--muted);font-size:12px">第一周：看清自己的选择</span></div>
+        <div class="progress"><i></i></div>
+        <div class="syllabus">
+          <div><span>沉没成本</span><span>今天</span></div>
+          <div><span>囚徒困境</span><span>明天</span></div>
+          <div><span>搭便车</span><span>第 3 天</span></div>
+          <div><span>重复博弈</span><span>第 4 天</span></div>
+          <div><span>信息不对称</span><span>第 5 天</span></div>
+          <div><span>战略威慑</span><span>第 6 天</span></div>
+          <div><span>倒推思维</span><span>第 7 天</span></div>
+        </div>
+        <p class="note">设计原则：每天一个概念，一个现代故事，一个小行动。故事会优先使用职场、消费、关系和互联网场景。</p>
+      </aside>
+    </div>
+  </div>
+  <script>
+    const answerBtn = document.querySelector('#answerBtn');
+    const answer = document.querySelector('#answer');
+    const doneBtn = document.querySelector('#doneBtn');
+    const doneState = document.querySelector('#doneState');
+    const streak = document.querySelector('#streak');
+    const done = localStorage.getItem('day1-done') === '1';
+    if (done) { doneState.classList.add('show'); streak.textContent = '1 天'; }
+    answerBtn.addEventListener('click', () => {
+      answer.classList.toggle('open');
+      answerBtn.textContent = answer.classList.contains('open') ? '收起答案' : '查看答案';
+    });
+    doneBtn.addEventListener('click', () => {
+      localStorage.setItem('day1-done', '1');
+      doneState.classList.add('show');
+      streak.textContent = '1 天';
+    });
+    document.querySelector('#nextBtn').addEventListener('click', () => {
+      alert('下一张知识卡会从“囚徒困境”开始。先把今天这个问题带进真实生活。');
+    });
+  </script>
+</body>
+</html>
